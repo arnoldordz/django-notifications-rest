@@ -7,9 +7,9 @@ from django.contrib.auth import get_user_model
 from notifications import settings as notifications_settings
 
 
-if hasattr(notifications_settings, 'USER_SERIALIZER_CLASS'):
+if 'USER_SERIALIZER_CLASS' in notifications_settings.get_config():
     from pydoc import locate
-    UserSerializer = locate(notifications_settings.USER_SERIALIZER_CLASS)
+    UserSerializer = locate(notifications_settings.get_config()['USER_SERIALIZER_CLASS'])
 else:
     from django.contrib.auth import get_user_model
     UserModel = get_user_model()
@@ -39,27 +39,32 @@ class GenericNotificationRelatedField(RelatedField):
         return serializer.data
 
 
-class NotificationSerializer(ModelSerializer):
-    recipient = UserSerializer()
-    actor = UserSerializer()
-    verb = serializers.CharField()
-    level = serializers.CharField()
-    description = serializers.CharField()
-    timestamp = serializers.DateTimeField(read_only=True)
-    unread = serializers.BooleanField()
-    public = serializers.BooleanField()
-    deleted = serializers.BooleanField()
-    emailed = serializers.BooleanField()
+if 'NOTIFICATION_SERIALIZER_CLASS' in notifications_settings.get_config():
+    from pydoc import locate
+    NotificationSerializer = locate(notifications_settings.get_config()['NOTIFICATION_SERIALIZER_CLASS'])
+else:
 
-    class Meta:
-        model = Notification
-        fields = ['id', 'recipient', 'actor', 'target', 'verb', 'level', 'description', 'unread', 'public', 'deleted',
-                  'emailed', 'timestamp']
+    class NotificationSerializer(ModelSerializer):
+        recipient = UserSerializer()
+        actor = UserSerializer()
+        verb = serializers.CharField()
+        level = serializers.CharField()
+        description = serializers.CharField()
+        timestamp = serializers.DateTimeField(read_only=True)
+        unread = serializers.BooleanField()
+        public = serializers.BooleanField()
+        deleted = serializers.BooleanField()
+        emailed = serializers.BooleanField()
 
-    def create(self, validated_data):
-        recipient_data = validated_data.pop('recipient')
-        recipient = UserModel.objects.get_or_create(id=recipient_data['id'])
-        actor_data = validated_data.pop('actor')
-        actor = UserModel.objects.get_or_create(id=actor_data['id'])
-        notification = Notification.objects.create(recipient=recipient[0], actor=actor[0], **validated_data)
-        return notification
+        class Meta:
+            model = Notification
+            fields = ['id', 'recipient', 'actor', 'target', 'verb', 'level', 'description', 'unread', 'public', 'deleted',
+                      'emailed', 'timestamp']
+
+        def create(self, validated_data):
+            recipient_data = validated_data.pop('recipient')
+            recipient = UserModel.objects.get_or_create(id=recipient_data['id'])
+            actor_data = validated_data.pop('actor')
+            actor = UserModel.objects.get_or_create(id=actor_data['id'])
+            notification = Notification.objects.create(recipient=recipient[0], actor=actor[0], **validated_data)
+            return notification
