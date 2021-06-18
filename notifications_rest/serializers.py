@@ -4,17 +4,22 @@ from notifications.models import Notification
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
 
-# Arnoldo2
-
-UserModel = get_user_model()
+from notifications import settings as notifications_settings
 
 
-class UserSerializer(ModelSerializer):
-    id = serializers.IntegerField()
+if hasattr(notifications_settings, 'USER_SERIALIZER_CLASS'):
+    from pydoc import locate
+    UserSerializer = locate(notifications_settings.USER_SERIALIZER_CLASS)
+else:
+    from django.contrib.auth import get_user_model
+    UserModel = get_user_model()
+    
+    class UserSerializer(ModelSerializer):
+        id = serializers.IntegerField()
 
-    class Meta:
-        model = UserModel
-        fields = ['id', ]
+        class Meta:
+            model = UserModel
+            fields = ['id', ]
 
 
 class ContentTypeSerializer(ModelSerializer):
