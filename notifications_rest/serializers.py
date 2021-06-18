@@ -4,6 +4,8 @@ from notifications.models import Notification
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
 
+# Arnoldo
+
 UserModel = get_user_model()
 
 
